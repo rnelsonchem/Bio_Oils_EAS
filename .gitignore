@@ -216,3 +216,4 @@ pip-log.txt
 
 # Data files
 Oil*
+.ipynb*

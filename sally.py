@@ -1,4 +1,5 @@
 import re
+
 import pandas as pds
 
 def creatingDataFrames(file_name, total_cols=30, index_col='Formula',
@@ -34,6 +35,22 @@ def creatingDataFrames(file_name, total_cols=30, index_col='Formula',
 
     return df.set_index(index_col)
     
+def createDF(file_name, total_cols=30, index_col='Formula',
+             formula_col='Formula', ratiolist=[('O', 'C'), ('H', 'C')], 
+             skiprows=2
+             ):
+    df = pds.read_csv(file_name, skiprows=skiprows, 
+                      usecols=range(total_cols) ) 
+                      
+    df = df.dropna( subset=[index_col] ) 
+    
+    if formula_col != None:
+        table = pds.DataFrame( ratiocalc(df[formula_col], ratiolist) )    
+        df = df.join(table)
+
+    return df.set_index(index_col)
+                 
+                 
 def ratiocalc(formulas, ratiolist):
     expression = r'([A-Za-z]{1,2})(\d{0,2})'
     regex = re.compile( expression )
@@ -41,6 +58,10 @@ def ratiocalc(formulas, ratiolist):
     ratios = []    
     for line in formulas:
         match_dict = {}
+        
+        if pds.isnull(line):
+            ratios.append(match_dict)
+            continue
         
         match = regex.findall(line)
         
