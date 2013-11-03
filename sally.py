@@ -1,6 +1,9 @@
 import re
 
+import numpy as np
 import pandas as pds
+
+elements = { 'H': 1.00794, 'C': 12.0107, 'O': 15.9994 }
 
 def creatingDataFrames(file_name, total_cols=30):
     csv = open(file_name)
@@ -84,8 +87,7 @@ def creatingDataFrames2(file_name, total_cols=30, index_col='Formula',
     
 def createDF(file_name, total_cols=30, index_col='Formula',
              formula_col='Formula', ratiolist=[('O', 'C'), ('H', 'C')], 
-             skiprows=2
-             ):
+             skiprows=2):
     df = pds.read_csv(file_name, skiprows=skiprows, 
                       usecols=range(total_cols) ) 
                       
@@ -126,3 +128,33 @@ def ratiocalc(formulas, ratiolist):
         ratios.append(match_dict)
         
     return ratios
+
+def df_comp(df1, df2, comps=['Mass','RT'], tols=[0.05, 0.1], 
+        extra_cols=['Vol %', 'HC ratio', 'OC ratio']):
+
+    matches = {}
+    count = 1
+    
+    all_cols = comps + extra_cols
+    
+    for cpd in df1.index:
+        mask = np.ones( len(df2), dtype=bool )
+        
+        for label, tol in zip(comps, tols):
+            mask *= (df2[label] > df1[label][cpd]-tol) & \
+                    (df2[label] < df1[label][cpd]+tol)
+
+        for i in list(df2[mask].index):
+            df1_vals = [cpd] + list(df1[all_cols].ix[cpd])
+            df2_vals = [i] + list(df2[all_cols].ix[i])
+            matches['Match {:d}'.format(count)] = df1_vals + df2_vals
+            count += 1
+    
+    columns = ['df1'] + [i+' df1' for i in all_cols] + \
+            ['df2'] + [i+' df2' for i in all_cols]
+
+    df = pds.DataFrame.from_dict(matches, orient='index')
+    df.columns = columns
+    
+    return df
+
