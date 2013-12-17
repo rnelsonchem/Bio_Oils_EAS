@@ -129,18 +129,19 @@ def ratiocalc(formulas, ratiolist):
         
     return ratios
 
-def df_comp(df1, df2, comps=['Mass','RT'], tols=[0.05, 0.1], 
+def df_comp(df1, df2, tols={'Mass': 0.05,'RT': 0.1}, 
         extra_cols=['Vol %', 'HC ratio', 'OC ratio']):
 
     matches = {}
     count = 1
     
-    all_cols = comps + extra_cols
+    all_cols = tols.keys() + extra_cols
     
     for cpd in df1.index:
         mask = np.ones( len(df2), dtype=bool )
         
-        for label, tol in zip(comps, tols):
+        for label in tols:
+            tol = tols[label]
             mask *= (df2[label] > df1[label][cpd]-tol) & \
                     (df2[label] < df1[label][cpd]+tol)
 
